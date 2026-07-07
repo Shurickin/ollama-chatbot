@@ -1,0 +1,34 @@
+from llm_client import openai_client
+import numpy as np
+import json
+from build_embeddings import load_embeddings
+
+def cosine_similarity(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+def search(query, top_k=3):
+    query_embedding = openai_client.embeddings.create(
+        model='embeddinggemma',
+        input=query
+    ).data[0].embedding
+
+    rows = load_embeddings()
+
+    print(rows)
+
+    scores = []
+    for row in rows:
+        score = cosine_similarity(
+            query_embedding,
+            json.loads(row["embedding"])
+        )
+        scores.append((score, row["chunk"]))
+    # for i, doc_vec in enumerate(doc_embeddings):
+    #     score = cosine_similarity(query_embedding, doc_vec)
+    #     scores.append((score, chunks[i]))
+
+    scores.sort(reverse=True, key=lambda x: x[0])
+    return scores[:top_k]
+
