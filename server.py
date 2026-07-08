@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import OpenAI
 from typing import Optional
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from llm_client import openai_client
 from memory import get_history
@@ -42,6 +44,16 @@ llama_system_prompt = "You MUST use the results from the tools to answer the use
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 client = openai_client
 
 # print(tools)
@@ -72,7 +84,7 @@ def ask_question(request: QuestionRequest):
         # format = ToolRouterResponse.model_json_schema()
     )
 
-    print(router_response.model_dump_json(indent=2))
+    # print(router_response.model_dump_json(indent=2))
 
     llama_prompt = llama_system_prompt
 
@@ -81,7 +93,7 @@ def ask_question(request: QuestionRequest):
             if item.name == "add":
                 args = json.loads(item.arguments)
                 result = add(args["a"], args["b"])
-                print(result)
+                # print(result)
                 history.append({
                     "role": "tool",
                     "tool_call_id": item.call_id,
@@ -92,7 +104,7 @@ def ask_question(request: QuestionRequest):
             elif item.name == "get_weather":
                 args = json.loads(item.arguments)
                 result = get_weather(args["city"])
-                print(result)
+                # print(result)
 
                 # Have to send the role as "user" due to llama3 inaccuracy with "tool"
                 history.append({
@@ -138,28 +150,78 @@ def ask_question(request: QuestionRequest):
     """
         })
 
-    llama_response = client.responses.create(
-        model = "llama3",
-        input = history,
-        instructions = llama_prompt,
+    def generate_response():
+
+        full_response = ""
+
+        llama_response = client.responses.create(
+            model="llama3",
+            input=history,
+            instructions=llama_prompt,
+            stream=True
+        )
+
+        for event in llama_response:
+
+            # Responses API streaming events
+            if event.type == "response.output_text.delta":
+                text = event.delta
+
+                text = event.delta
+
+                print("SENDING:", text)
+
+                full_response += text
+
+                yield text
+
+
+        # Save completed response after streaming finishes
+        save_message(
+            request.session_id,
+            "assistant",
+            full_response
+        )
+
+        history.append({
+            "role": "assistant",
+            "content": full_response
+        })
+
+
+    return StreamingResponse(
+        generate_response(),
+        media_type="text/plain"
     )
 
-    save_message(
-        request.session_id,
-        "assistant",
-        llama_response.output_text
-    )
+    # llama_response = client.responses.create(
+    #     model = "llama3",
+    #     input = history,
+    #     instructions = llama_prompt,
+    # )
 
-    print(llama_response.model_dump_json(indent=2))
+    # save_message(
+    #     request.session_id,
+    #     "assistant",
+    #     llama_response.output_text
+    # )
 
-    history.append({
-        "role": "assistant",
-        "content": llama_response.output_text
-    })
+    # print(llama_response.model_dump_json(indent=2))
 
-    # save(str(request.session_id), history)
+    # history.append({
+    #     "role": "assistant",
+    #     "content": llama_response.output_text
+    # })
 
-    return {
-        "question": request.question,
-        "answer": llama_response.output_text
-    }
+    # # save(str(request.session_id), history)
+
+    # # This was for terminal interaction
+    # # return {
+    # #     "question": request.question,
+    # #     "answer": llama_response.output_text
+    # # }
+
+    # return {
+    #     "role": "Assistant",
+    #     "content": llama_response.output_text
+    # }
