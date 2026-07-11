@@ -2,6 +2,8 @@ from llm_client import openai_client
 import numpy as np
 import json
 from build_embeddings import load_embeddings
+from pypdf import PdfReader
+import io
 
 def cosine_similarity(a, b):
     a = np.array(a)
@@ -16,7 +18,7 @@ def search(query, top_k=3):
 
     rows = load_embeddings()
 
-    print(rows)
+    # print(rows)
 
     scores = []
     for row in rows:
@@ -31,4 +33,15 @@ def search(query, top_k=3):
 
     scores.sort(reverse=True, key=lambda x: x[0])
     return scores[:top_k]
+
+def extract_pdf(contents):
+
+    pdf = PdfReader(io.BytesIO(contents))
+
+    text = ""
+
+    for page in pdf.pages:
+        text += page.extract_text()
+
+    return text
 

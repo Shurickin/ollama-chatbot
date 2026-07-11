@@ -19,16 +19,16 @@ def get_chunks_fixed_size_with_overlap(text: str, chunk_size: int, overlap_fract
         chunks.append(chunk)
     return chunks
 
-def save_to_sqlite(chunks, embeddings):
+def save_to_sqlite(chunks, embeddings, source):
     conn = get_connection()
     cursor = conn.cursor()
     for chunk, embedding in zip(chunks, embeddings):
         cursor.execute(
             """
-            INSERT INTO embeddings (chunk, embedding)
-            VALUES (?, ?)
+            INSERT INTO embeddings (chunk, embedding, source)
+            VALUES (?, ?, ?)
             """,
-            (chunk, json.dumps(embedding))
+            (chunk, json.dumps(embedding), source)
         )
 
     conn.commit()
@@ -38,21 +38,39 @@ def delete_ALL_embeddings():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("DELETE FROM embeddings")
+    cursor.execute("DELETE embeddings")
 
     conn.commit()
     conn.close()
 
-def load_embeddings():
+def delete_table():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT chunk, embedding
-        FROM embeddings
-        ORDER BY id
-        """
-    )
+
+    cursor.execute("DROP TABLE IF EXISTS embeddings")
+
+    conn.commit()
+    conn.close()
+
+def load_embeddings(source=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+    if source:
+        cursor.execute(
+            """
+            SELECT chunk, embedding
+            FROM embeddings
+            WHERE source = ?
+            """,
+            (source,)
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT chunk, embedding
+            FROM embeddings
+            """
+        )
 
     rows = cursor.fetchall()
 
@@ -77,6 +95,7 @@ def create_table():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         chunk TEXT NOT NULL,
         embedding TEXT NOT NULL,
+        source TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -84,7 +103,9 @@ def create_table():
     conn.close()
 
 if __name__ == "__main__":
-    delete_ALL_embeddings()
+    # delete_ALL_embeddings()
+    delete_table()
+    create_table()
 
     with open("halo_article.txt", "r", encoding="utf-8") as f:
         text = f.read()
@@ -103,4 +124,4 @@ if __name__ == "__main__":
         ).data
     ]
 
-    save_to_sqlite(chunks, doc_embeddings)
+    save_to_sqlite(chunks, doc_embeddings, "halo_article.txt")

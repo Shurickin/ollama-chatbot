@@ -1,6 +1,6 @@
 import uuid
 import json
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from openai import OpenAI
 from typing import Optional
@@ -14,6 +14,9 @@ from tools import add
 from tools import get_weather
 from tools import tools
 from rag import search
+from rag import extract_pdf
+from build_embeddings import get_chunks_fixed_size_with_overlap
+from build_embeddings import save_to_sqlite
 
 # Defines what the client must send
 class QuestionRequest(BaseModel):
@@ -169,7 +172,7 @@ def ask_question(request: QuestionRequest):
 
                 text = event.delta
 
-                print("SENDING:", text)
+                # print("SENDING:", text)
 
                 full_response += text
 
@@ -225,3 +228,32 @@ def ask_question(request: QuestionRequest):
     #     "role": "Assistant",
     #     "content": llama_response.output_text
     # }
+
+@app.post("/upload")
+async def upload_document(file: UploadFile = File(...)):
+
+    contents = await file.read()
+
+    text = extract_pdf(contents)
+
+    chunks = get_chunks_fixed_size_with_overlap(
+        text,
+        chunk_size=100,
+        overlap_fraction=0.1
+    )
+
+    doc_embeddings = [
+        item.embedding
+        for item in openai_client.embeddings.create(
+            model="embeddinggemma",
+            input=chunks
+        ).data
+    ]
+
+    save_to_sqlite(chunks, doc_embeddings, file.filename)
+
+    print(text[:500])
+
+    return {
+        "filename": file.filename
+    }
