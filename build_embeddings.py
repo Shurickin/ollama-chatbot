@@ -34,20 +34,36 @@ def save_to_sqlite(chunks, embeddings, source):
     conn.commit()
     conn.close()
 
-def delete_ALL_embeddings():
+def add_msg(session_id, role, content):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("DELETE embeddings")
+    cursor.execute(
+        """
+        INSERT INTO messages (session_id, role, content)
+        VALUES (?, ?, ?)
+        """,
+        (session_id, role, content)
+    )
 
     conn.commit()
     conn.close()
 
-def delete_table():
+
+def delete_ALL_embeddings():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("DROP TABLE IF EXISTS embeddings")
+    cursor.execute("DELETE FROM embeddings")
+
+    conn.commit()
+    conn.close()
+
+def delete_table(table):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(f"DROP TABLE IF EXISTS {table}")
 
     conn.commit()
     conn.close()
@@ -86,7 +102,46 @@ def load_embeddings(source=None):
 
     return embeddings
 
-def create_table():
+def get_all_sources():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT DISTINCT source
+        FROM embeddings
+        """
+    )
+
+    rows = cursor.fetchall()
+
+    sources = []
+
+    for source in rows:
+        sources.append({"source": source[0]})
+
+    conn.close()
+
+    return sources
+
+def create_messages_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+def create_embedding_table():
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -103,9 +158,10 @@ def create_table():
     conn.close()
 
 if __name__ == "__main__":
-    # delete_ALL_embeddings()
-    delete_table()
-    create_table()
+    delete_ALL_embeddings()
+    delete_table("messages")
+    create_messages_table()
+    # create_embedding_table()
 
     with open("halo_article.txt", "r", encoding="utf-8") as f:
         text = f.read()

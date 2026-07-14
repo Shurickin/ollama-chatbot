@@ -87,6 +87,32 @@ tools = [
             },
             "required": ["phrase"]
         }
+    },
+    {
+        "type": "function",
+        "name": "get_context",
+        "description": """
+            Retrieve context for an uploaded document.
+
+            Use this tool when:
+            - The user asks about an uploaded document.
+            - The user refers to a document indirectly, such as:
+            "this document"
+            "the previous document"
+            "the second document"
+            "the last PDF"
+
+            Determine the correct document from the conversation history.
+
+            Never guess a document if the reference is unclear.
+            """,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "document_name": {"type": "string"}
+            },
+            "required": ["document_name"]
+        }
     }
 ]
 

@@ -2,24 +2,6 @@ from database import get_connection
 
 conversations = {}
 
-def create_table():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        session_id TEXT NOT NULL,
-        role TEXT NOT NULL,
-        content TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-
 def get_history(session_id):
     if session_id not in conversations:
         conversations[session_id] = load_from_sqlite(session_id)

@@ -10,13 +10,13 @@ def cosine_similarity(a, b):
     b = np.array(b)
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-def search(query, top_k=3):
+def search(query, top_k=3, true_source=None):
     query_embedding = openai_client.embeddings.create(
         model='embeddinggemma',
         input=query
     ).data[0].embedding
 
-    rows = load_embeddings()
+    rows = load_embeddings(true_source)
 
     # print(rows)
 

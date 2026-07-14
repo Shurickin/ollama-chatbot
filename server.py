@@ -17,11 +17,18 @@ from rag import search
 from rag import extract_pdf
 from build_embeddings import get_chunks_fixed_size_with_overlap
 from build_embeddings import save_to_sqlite
+from build_embeddings import get_all_sources
+from build_embeddings import add_msg
 
 # Defines what the client must send
 class QuestionRequest(BaseModel):
     session_id: str
     question: str
+
+class MsgDBRequest(BaseModel):
+    session_id: str
+    role: str
+    content: str
 
 # class ToolRouterResponse(BaseModel):
 #     needs_tool: bool
@@ -61,6 +68,10 @@ client = openai_client
 
 # print(tools)
 
+sources = get_all_sources()
+
+# print(sources)
+
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
 
@@ -78,6 +89,15 @@ def ask_question(request: QuestionRequest):
         request.question
     )
 
+    print("----- CHAT HISTORY -----")
+
+    for msg in history:
+        print(msg["role"], ":", msg["content"])
+
+    print("------------------------")
+
+    print(json.dumps(history, indent=2))
+
     # Route to determine tool use
     router_response = client.responses.create(
         model="qwen3.5",
@@ -87,9 +107,11 @@ def ask_question(request: QuestionRequest):
         # format = ToolRouterResponse.model_json_schema()
     )
 
-    # print(router_response.model_dump_json(indent=2))
+    print(router_response.model_dump_json(indent=2))
 
     llama_prompt = llama_system_prompt
+
+    true_source = None
 
     for item in router_response.output:
         if item.type == "function_call":
@@ -127,19 +149,27 @@ def ask_question(request: QuestionRequest):
                 #     "content": json.dumps(result)
                 # })
                 # addition = f"The get_weather tool was executed. Its result was: {result}. You MUST use this result instead of finding it."
-
-            
+            elif item.name == "get_context":
+                print("***************************Get context was Needed *************************************")
+                args = json.loads(item.arguments)
+                true_source = args["document_name"]
             
             
             # llama_prompt += addition
-    results = search(request.question, top_k=3)
+
+    for source in sources:
+        if source["source"].lower() in request.question.lower():
+            true_source = source["source"]
+            break
+    
+    results = search(request.question, top_k=3, true_source = true_source)
 
     if results[0][0] > 0.45:
         use_context = True
     else:
         use_context = False
     
-    if use_context:
+    if use_context or true_source:
         print("\n\nRAG CONTEXT USED\n\n")
         context = "\n".join(
             f"{i+1}. {text}"
@@ -257,3 +287,7 @@ async def upload_document(file: UploadFile = File(...)):
     return {
         "filename": file.filename
     }
+
+@app.post("/add-to-db-msgs")
+async def add_msgs_to_db(request: MsgDBRequest):
+    add_msg(request.session_id, request.role, request.content)
