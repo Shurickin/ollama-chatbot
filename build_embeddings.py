@@ -34,22 +34,6 @@ def save_to_sqlite(chunks, embeddings, source):
     conn.commit()
     conn.close()
 
-def add_msg(session_id, role, content):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        INSERT INTO messages (session_id, role, content)
-        VALUES (?, ?, ?)
-        """,
-        (session_id, role, content)
-    )
-
-    conn.commit()
-    conn.close()
-
-
 def delete_ALL_embeddings():
     conn = get_connection()
     cursor = conn.cursor()
@@ -124,6 +108,23 @@ def get_all_sources():
 
     return sources
 
+def create_conversations_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS conversations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        conversation_id TEXT NOT NULL,
+        title TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
 def create_messages_table():
     conn = get_connection()
     cursor = conn.cursor()
@@ -131,7 +132,7 @@ def create_messages_table():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        session_id TEXT NOT NULL,
+        conversation_id TEXT NOT NULL,
         role TEXT NOT NULL,
         content TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -158,26 +159,27 @@ def create_embedding_table():
     conn.close()
 
 if __name__ == "__main__":
-    delete_ALL_embeddings()
+    # delete_ALL_embeddings()
     delete_table("messages")
     create_messages_table()
+    create_conversations_table()
     # create_embedding_table()
 
-    with open("halo_article.txt", "r", encoding="utf-8") as f:
-        text = f.read()
+    # with open("halo_article.txt", "r", encoding="utf-8") as f:
+    #     text = f.read()
 
-    chunks = get_chunks_fixed_size_with_overlap(
-        text,
-        chunk_size=100,
-        overlap_fraction=0.1
-    )
+    # chunks = get_chunks_fixed_size_with_overlap(
+    #     text,
+    #     chunk_size=100,
+    #     overlap_fraction=0.1
+    # )
 
-    doc_embeddings = [
-        item.embedding
-        for item in openai_client.embeddings.create(
-            model="embeddinggemma",
-            input=chunks
-        ).data
-    ]
+    # doc_embeddings = [
+    #     item.embedding
+    #     for item in openai_client.embeddings.create(
+    #         model="embeddinggemma",
+    #         input=chunks
+    #     ).data
+    # ]
 
-    save_to_sqlite(chunks, doc_embeddings, "halo_article.txt")
+    # save_to_sqlite(chunks, doc_embeddings, "halo_article.txt")

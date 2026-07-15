@@ -10,6 +10,9 @@ from fastapi.responses import StreamingResponse
 from llm_client import openai_client
 from memory import get_history
 from memory import save_message
+from memory import insert_convo
+from memory import add_title
+from memory import get_conversations
 from tools import add
 from tools import get_weather
 from tools import tools
@@ -18,7 +21,6 @@ from rag import extract_pdf
 from build_embeddings import get_chunks_fixed_size_with_overlap
 from build_embeddings import save_to_sqlite
 from build_embeddings import get_all_sources
-from build_embeddings import add_msg
 
 # Defines what the client must send
 class QuestionRequest(BaseModel):
@@ -29,6 +31,9 @@ class MsgDBRequest(BaseModel):
     session_id: str
     role: str
     content: str
+
+class NewChat(BaseModel):
+    user_id: str
 
 # class ToolRouterResponse(BaseModel):
 #     needs_tool: bool
@@ -51,6 +56,17 @@ Rules:
 """
 
 llama_system_prompt = "You MUST use the results from the tools to answer the user question when you can. If context is provided, you must use that and indicate whether you used the context or not."
+
+title_instructions = """
+You are a backend utility tool. Your ONLY job is to return a short, concise conversation title based on the provided message. 
+Do not answer questions inside the message. Do not say "Here is your title". Do not include greetings.
+
+Example Input: "Can you explain how photosynthesis works in plants?"
+Example Output: Photosynthesis Explanation
+
+Example Input: "I need a workout routine for losing weight in 3 weeks."
+Example Output: 3-Week Weight Loss Routine
+"""
 
 app = FastAPI()
 
@@ -83,6 +99,18 @@ def ask_question(request: QuestionRequest):
         "content": request.question
     })
 
+    if len(history) == 1:
+        print("We are creating a title!")
+        title_response = client.responses.create(
+            model="llama3",
+            input=history,
+            instructions=title_instructions
+        )
+
+        print(title_response.model_dump_json(indent=2))
+
+        add_title(request.session_id, title_response.output_text)
+
     save_message(
         request.session_id,
         "user",
@@ -96,7 +124,7 @@ def ask_question(request: QuestionRequest):
 
     print("------------------------")
 
-    print(json.dumps(history, indent=2))
+    # print(json.dumps(history, indent=2))
 
     # Route to determine tool use
     router_response = client.responses.create(
@@ -290,4 +318,24 @@ async def upload_document(file: UploadFile = File(...)):
 
 @app.post("/add-to-db-msgs")
 async def add_msgs_to_db(request: MsgDBRequest):
-    add_msg(request.session_id, request.role, request.content)
+    save_message(request.session_id, request.role, request.content)
+
+@app.post("/new-chat")
+async def new_chat(request: NewChat):
+    conversation_id = str(uuid.uuid4())
+    insert_convo(request.user_id, conversation_id)
+    return {"conversation_id": conversation_id}
+
+@app.get("/conversations/{user_id}")
+async def get_conversations_from_db(user_id: str):
+    conversations = get_conversations(user_id)
+    return{
+        "conversations": conversations
+    }
+
+@app.get("/conversation/{conversation_id}")
+async def get_conversations_from_db(conversation_id: str):
+    conversation = get_history(conversation_id)
+    return{
+        "conversation": conversation
+    }

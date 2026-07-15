@@ -1,12 +1,12 @@
 from database import get_connection
 
-conversations = {}
+conversation = {}
 
 def get_history(session_id):
-    if session_id not in conversations:
-        conversations[session_id] = load_from_sqlite(session_id)
+    if session_id not in conversation:
+        conversation[session_id] = load_from_sqlite(session_id)
 
-    return conversations[session_id]
+    return conversation[session_id]
 
 def save_message(session_id, role, content):
     conn = get_connection()
@@ -14,11 +14,42 @@ def save_message(session_id, role, content):
 
     cursor.execute(
         """
-        INSERT INTO messages (session_id, role, content)
+        INSERT INTO messages (conversation_id, role, content)
         VALUES (?, ?, ?)
         """,
         (session_id, role, content)
     )
+    conn.commit()
+    conn.close()
+
+def insert_convo(user_id, conversation_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO conversations (user_id, conversation_id)
+        VALUES (?, ?)
+        """,
+        (user_id, conversation_id)
+    )
+    conn.commit()
+    conn.close()
+
+def add_title(conversation_id, title):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE conversations
+        SET title=?
+        WHERE conversation_id=?
+        """,
+        (title, conversation_id)
+    )
+
+    print(f"Rows updated: {cursor.rowcount}")
     conn.commit()
     conn.close()
 
@@ -30,7 +61,7 @@ def load_from_sqlite(session_id):
         """
         SELECT role, content
         FROM messages
-        WHERE session_id = ?
+        WHERE conversation_id = ?
         ORDER BY id
         """,
         (session_id,)
@@ -49,6 +80,34 @@ def load_from_sqlite(session_id):
     conn.close()
     
     return history
+
+def get_conversations(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT conversation_id, title
+        FROM conversations
+        WHERE user_id = ?
+        ORDER BY id DESC
+        """,
+        (user_id,)
+    )
+
+    rows = cursor.fetchall()
+
+    conversations = []
+
+    for conversation_id, title in rows:
+        conversations.append({
+            "conversation_id": conversation_id,
+            "title": title
+        })
+
+    conn.close()
+    
+    return conversations
 
 
 # The old file that would be reset when the server is closed
