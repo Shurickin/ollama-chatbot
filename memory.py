@@ -53,6 +53,20 @@ def add_title(conversation_id, title):
     conn.commit()
     conn.close()
 
+def insert_user(user_id, email):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO users (id, email)
+        VALUES (?, ?)
+        """,
+        (user_id, email)
+    )
+    conn.commit()
+    conn.close()
+
 def load_from_sqlite(session_id):
     conn = get_connection()
     cursor = conn.cursor()

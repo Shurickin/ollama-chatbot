@@ -13,6 +13,7 @@ from memory import save_message
 from memory import insert_convo
 from memory import add_title
 from memory import get_conversations
+from memory import insert_user
 from tools import add
 from tools import get_weather
 from tools import tools
@@ -35,10 +36,9 @@ class MsgDBRequest(BaseModel):
 class NewChat(BaseModel):
     user_id: str
 
-# class ToolRouterResponse(BaseModel):
-#     needs_tool: bool
-#     tool_name: Optional[str] = None
-#     tool_arguments: Optional[str] = None
+class AddUser(BaseModel):
+    user_id: str
+    email: str
 
 system_prompt = """
 You are ONLY a tool routing model.
@@ -338,4 +338,11 @@ async def get_conversations_from_db(conversation_id: str):
     conversation = get_history(conversation_id)
     return{
         "conversation": conversation
+    }
+
+@app.post("/add-user")
+async def add_user(request: AddUser):
+    insert_user(request.user_id, request.email)
+    return{
+        "user_id": request.user_id
     }

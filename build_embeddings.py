@@ -142,6 +142,23 @@ def create_messages_table():
     conn.commit()
     conn.close()
 
+def create_users_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    #-- ID will hold the Auth Provider's UID (e.g., "AI938fksj...")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,          
+        email TEXT UNIQUE NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
 def create_embedding_table():
     conn = get_connection()
     cursor = conn.cursor()
@@ -160,10 +177,11 @@ def create_embedding_table():
 
 if __name__ == "__main__":
     # delete_ALL_embeddings()
-    delete_table("messages")
-    create_messages_table()
-    create_conversations_table()
+    # delete_table("messages")
+    # create_messages_table()
+    # create_conversations_table()
     # create_embedding_table()
+    create_users_table()
 
     # with open("halo_article.txt", "r", encoding="utf-8") as f:
     #     text = f.read()
