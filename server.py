@@ -14,6 +14,7 @@ from memory import insert_convo
 from memory import add_title
 from memory import get_conversations
 from memory import insert_user
+from memory import deleteConvo
 from tools import add
 from tools import get_weather
 from tools import tools
@@ -39,6 +40,13 @@ class NewChat(BaseModel):
 class AddUser(BaseModel):
     user_id: str
     email: str
+
+class ChangeTitle(BaseModel):
+    conversation_id: str
+    title: str
+
+class DeleteConvo(BaseModel):
+    conversation_id: str
 
 system_prompt = """
 You are ONLY a tool routing model.
@@ -345,4 +353,18 @@ async def add_user(request: AddUser):
     insert_user(request.user_id, request.email)
     return{
         "user_id": request.user_id
+    }
+
+@app.post("/rename-title")
+async def rename_title(request: ChangeTitle):
+    add_title(request.conversation_id, request.title)
+    return{
+        "title": request.title
+    }
+
+@app.post("/delete-convo")
+async def rename_title(request: DeleteConvo):
+    deleteConvo(request.conversation_id)
+    return{
+        "conversation": request.conversation_id
     }

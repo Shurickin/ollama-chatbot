@@ -123,6 +123,20 @@ def get_conversations(user_id):
     
     return conversations
 
+def deleteConvo(conversation_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute(
+        """
+        DELETE FROM conversations WHERE conversation_id = ?
+        """,
+        (conversation_id,)
+    )
+    conn.commit()
+    conn.close()
+    
+
 
 # The old file that would be reset when the server is closed
 
