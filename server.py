@@ -321,6 +321,7 @@ async def upload_document(file: UploadFile = File(...)):
         for item in openai_client.embeddings.create(
             model=embedding_model,
             extra_body={"input_type": "passage"},       # For the models that support it, this tells the model to treat the input as a query rather than a document.
+            encoding_format="float",                # Needed for NVIDIA Nemotron embeddings, which return a list of floats rather than a list of strings (base64).
             input=chunks
         ).data
     ]

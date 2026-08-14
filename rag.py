@@ -15,6 +15,7 @@ def search(query, top_k=3, true_source=None):
     query_embedding = openai_client.embeddings.create(
         model=os.getenv("EMBEDDING_MODEL"),
         extra_body={"input_type": "query"},     # For the models that support it, this tells the model to treat the input as a query rather than a document.
+        encoding_format="float",                # Needed for NVIDIA Nemotron embeddings, which return a list of floats rather than a list of strings (base64).
         input=query
     ).data[0].embedding
 
