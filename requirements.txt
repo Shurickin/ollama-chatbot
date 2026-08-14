@@ -1,0 +1,9 @@
+fastapi
+pydantic
+openai
+requests
+geopy
+numpy
+pypdf
+uvicorn
+python-multipart
