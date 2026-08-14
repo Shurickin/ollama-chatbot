@@ -200,32 +200,34 @@ def ask_question(request: QuestionRequest):
             
             
             # llama_prompt += addition
+    results = []
+    use_context = False
 
-    for source in sources:
-        if source["source"].lower() in request.question.lower():
-            true_source = source["source"]
-            break
-    
-    results = search(request.question, top_k=3, true_source = true_source)
+    if sources:
+        for source in sources:
+            if source["source"].lower() in request.question.lower():
+                true_source = source["source"]
+                break
 
-    if results[0][0] > 0.45:
-        use_context = True
-    else:
-        use_context = False
     
-    if use_context or true_source:
-        print("\n\nRAG CONTEXT USED\n\n")
-        context = "\n".join(
-            f"{i+1}. {text}"
-            for i, (_, text) in enumerate(results)
-        )
-        history.append({
-        "role": "user",
-        "content": f"""
-    Context:
-    {context}
-    """
-        })
+        results = search(request.question, top_k=3, true_source = true_source)
+
+        if results and results[0][0] > 0.45:
+            use_context = True
+        
+        if use_context or true_source:
+            print("\n\nRAG CONTEXT USED\n\n")
+            context = "\n".join(
+                f"{i+1}. {text}"
+                for i, (_, text) in enumerate(results)
+            )
+            history.append({
+            "role": "user",
+            "content": f"""
+        Context:
+        {context}
+        """
+            })
 
     def generate_response():
 
