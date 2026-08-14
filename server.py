@@ -1,5 +1,6 @@
 import uuid
 import json
+import os
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from openai import OpenAI
@@ -90,8 +91,12 @@ app.add_middleware(
 )
 
 client = openai_client
+response_model = os.getenv("RESPONSE_MODEL")
+router_model = os.getenv("ROUTER_MODEL")
+embedding_model = os.getenv("EMBEDDING_MODEL")
 
 # print(tools)
+
 # initialize_database() is for production use with Render. Not needed for local testing if the database is already created.
 init_database()
 sources = get_all_sources()
@@ -112,7 +117,7 @@ def ask_question(request: QuestionRequest):
     if len(history) == 1:
         print("We are creating a title!")
         title_response = client.responses.create(
-            model="llama3",
+            model=response_model,
             input=history,
             instructions=title_instructions
         )
@@ -138,7 +143,8 @@ def ask_question(request: QuestionRequest):
 
     # Route to determine tool use
     router_response = client.responses.create(
-        model="qwen3.5",
+        # model="qwen3.5",      # For Local Testing
+        model=router_model,
         input=history,
         instructions = system_prompt,
         tools = tools,
@@ -226,7 +232,7 @@ def ask_question(request: QuestionRequest):
         full_response = ""
 
         llama_response = client.responses.create(
-            model="llama3",
+            model=response_model,
             input=history,
             instructions=llama_prompt,
             stream=True
@@ -313,7 +319,8 @@ async def upload_document(file: UploadFile = File(...)):
     doc_embeddings = [
         item.embedding
         for item in openai_client.embeddings.create(
-            model="embeddinggemma",
+            model=embedding_model,
+            extra_body={"input_type": "passage"},       # For the models that support it, this tells the model to treat the input as a query rather than a document.
             input=chunks
         ).data
     ]

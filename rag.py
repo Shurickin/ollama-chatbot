@@ -4,6 +4,7 @@ import json
 from build_embeddings import load_embeddings
 from pypdf import PdfReader
 import io
+import os
 
 def cosine_similarity(a, b):
     a = np.array(a)
@@ -12,7 +13,8 @@ def cosine_similarity(a, b):
 
 def search(query, top_k=3, true_source=None):
     query_embedding = openai_client.embeddings.create(
-        model='embeddinggemma',
+        model=os.getenv("EMBEDDING_MODEL"),
+        extra_body={"input_type": "query"},     # For the models that support it, this tells the model to treat the input as a query rather than a document.
         input=query
     ).data[0].embedding
 
