@@ -23,7 +23,7 @@ from rag import extract_pdf
 from build_embeddings import get_chunks_fixed_size_with_overlap
 from build_embeddings import save_to_sqlite
 from build_embeddings import get_all_sources
-from database import initialize_database
+from database import init_database
 
 # Defines what the client must send
 class QuestionRequest(BaseModel):
@@ -93,7 +93,7 @@ client = openai_client
 
 # print(tools)
 # initialize_database() is for production use with Render. Not needed for local testing if the database is already created.
-initialize_database()
+init_database()
 sources = get_all_sources()
 
 # print(sources)
