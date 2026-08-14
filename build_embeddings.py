@@ -108,72 +108,7 @@ def get_all_sources():
 
     return sources
 
-def create_conversations_table():
-    conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS conversations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT NOT NULL,
-        conversation_id TEXT NOT NULL,
-        title TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-def create_messages_table():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        conversation_id TEXT NOT NULL,
-        role TEXT NOT NULL,
-        content TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-def create_users_table():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    #-- ID will hold the Auth Provider's UID (e.g., "AI938fksj...")
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,          
-        email TEXT UNIQUE NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-def create_embedding_table():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS embeddings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        chunk TEXT NOT NULL,
-        embedding TEXT NOT NULL,
-        source TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    conn.commit()
-    conn.close()
 
 if __name__ == "__main__":
     # delete_ALL_embeddings()
@@ -181,7 +116,8 @@ if __name__ == "__main__":
     # create_messages_table()
     # create_conversations_table()
     # create_embedding_table()
-    create_users_table()
+    # create_users_table()
+    0
 
     # with open("halo_article.txt", "r", encoding="utf-8") as f:
     #     text = f.read()
