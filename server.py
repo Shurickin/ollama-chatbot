@@ -80,11 +80,13 @@ Example Output: 3-Week Weight Loss Routine
 
 app = FastAPI()
 
+# Read the comma-separated string and split it into a Python list
+raw_origins = os.getenv("ALLOWED_CORS_ORIGINS")
+cors_origins = [origin.strip() for origin in raw_origins.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
