@@ -1,7 +1,7 @@
 import uuid
 import json
 import os
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from openai import OpenAI
 from typing import Optional
@@ -30,6 +30,7 @@ from database import init_database
 class QuestionRequest(BaseModel):
     session_id: str
     question: str
+    model: str
 
 class MsgDBRequest(BaseModel):
     session_id: str
@@ -93,9 +94,11 @@ app.add_middleware(
 )
 
 client = openai_client
-response_model = os.getenv("RESPONSE_MODEL")
+# response_model = os.getenv("RESPONSE_MODEL")
 router_model = os.getenv("ROUTER_MODEL")
 embedding_model = os.getenv("EMBEDDING_MODEL")
+
+AVAILABLE_RESPONSE_MODELS = os.getenv("AVAILABLE_MODELS", "").split(",")
 
 # print(tools)
 
@@ -108,6 +111,12 @@ sources = get_all_sources()
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
 
+    if request.model not in AVAILABLE_RESPONSE_MODELS:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid model selected."
+        )
+
     # history = conversations.get(str(request.session_id), [])
     history = get_history(request.session_id)
 
@@ -119,7 +128,7 @@ def ask_question(request: QuestionRequest):
     if len(history) == 1:
         print("We are creating a title!")
         title_response = client.responses.create(
-            model=response_model,
+            model=request.model,
             input=history,
             instructions=title_instructions
         )
@@ -236,7 +245,7 @@ def ask_question(request: QuestionRequest):
         full_response = ""
 
         llama_response = client.responses.create(
-            model=response_model,
+            model=request.model,
             input=history,
             instructions=llama_prompt,
             stream=True
