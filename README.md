@@ -1,4 +1,3 @@
-````markdown
 # AI Chatbot Backend
 
 A production-oriented FastAPI backend for a full-stack AI chatbot application. The backend provides streaming LLM responses, conversation memory, tool calling, PDF document ingestion, embedding-based retrieval, and Retrieval-Augmented Generation (RAG).
@@ -61,7 +60,6 @@ The service is designed to work with a separate React frontend and supports conf
              │ Embedding Model │
              └─────────────────┘
 ```
-````
 
 ---
 
