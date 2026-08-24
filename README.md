@@ -20,6 +20,22 @@ The service is designed to work with a separate React frontend and supports conf
 
 ---
 
+## 🌐 Deployment
+
+The backend is deployed using [Render](https://render.com).
+
+The production API is available at:
+
+**[https://ollama-chatbot-v6ad.onrender.com](https://ollama-chatbot-v6ad.onrender.com)**
+
+FastAPI's interactive documentation can be accessed at:
+
+**[https://ollama-chatbot-v6ad.onrender.com/docs](https://ollama-chatbot-v6ad.onrender.com/docs)**
+
+The frontend communicates with the backend through the deployed API rather than relying on localhost.
+
+---
+
 ## 🏗️ Architecture
 
 ```text
@@ -333,22 +349,6 @@ backend/
 ```
 
 > File names may change as the project evolves.
-
----
-
-## 🌐 Deployment
-
-The backend is deployed using [Render](https://render.com).
-
-The production API is available at:
-
-**[https://ollama-chatbot-v6ad.onrender.com](https://ollama-chatbot-v6ad.onrender.com)**
-
-FastAPI's interactive documentation can be accessed at:
-
-**[https://ollama-chatbot-v6ad.onrender.com/docs](https://ollama-chatbot-v6ad.onrender.com/docs)**
-
-The frontend communicates with the backend through the deployed API rather than relying on localhost.
 
 ---
 
