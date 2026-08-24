@@ -60,6 +60,7 @@ The service is designed to work with a separate React frontend and supports conf
              │ Chat Models     │
              │ Embedding Model │
              └─────────────────┘
+```
 ````
 
 ---
