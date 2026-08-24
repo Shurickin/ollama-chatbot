@@ -34,6 +34,8 @@ FastAPI's interactive documentation can be accessed at:
 
 The frontend communicates with the backend through the deployed API rather than relying on localhost.
 
+**[Try the AI Chatbot](https://react-chatbot-frontend.onrender.com)**
+
 ---
 
 ## 🏗️ Architecture
